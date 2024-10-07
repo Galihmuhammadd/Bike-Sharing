@@ -115,3 +115,5 @@ Werkzeug==3.0.4
 wrapt==1.16.0
 yarg==0.1.9
 setuptools==58.1.0
+cython==3.0.11
+wheel==0.44.0

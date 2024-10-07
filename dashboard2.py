@@ -1,0 +1,74 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Mengatur dataset dengan nama kolom yang sesuai
+day_data = pd.read_csv("data/day.csv")
+hour_data = pd.read_csv("data/hour.csv")
+rfm_data = pd.read_csv("data/rfm_analysis.csv")
+clustering_data = pd.read_csv("data/clustering_analysis.csv")
+
+
+# Judul Dashboard
+st.title("Dashboard Interaktif: Analisis Lanjutan Penggunaan Bike Sharing")
+st.markdown("Dashboard ini berfungsi untuk menganalisis pola penggunaan layanan bike-sharing berdasarkan data harian dan per jam. Pengguna dapat melihat analisis RFM, clustering, serta tren penggunaan sepeda berdasarkan musim dan hari kerja.")
+
+# Pilihan untuk filter dataset
+dataset_choice = st.sidebar.selectbox('Pilih Dataset untuk Analisis', ['Harian', 'Per Jam', 'RFM Analysis', 'Clustering Analysis'])
+
+# Filter Musim dan Tahun menggunakan kolom yang sesuai
+musim_filter = st.sidebar.multiselect('Pilih Musim', day_data['Musim'].unique(), default=day_data['Musim'].unique())
+tahun_filter = st.sidebar.selectbox('Pilih Tahun', day_data['Tahun'].unique())
+
+# Filter Data Harian Berdasarkan Musim dan Tahun
+filtered_day_data = day_data[(day_data['Musim'].isin(musim_filter)) & (day_data['Tahun'] == tahun_filter)]
+
+# Visualisasi Penggunaan Harian Berdasarkan Musim
+st.subheader("Penggunaan Sepeda Harian Berdasarkan Musim")
+st.markdown("**Interpretasi:** Grafik ini menunjukkan penggunaan sepeda setiap hari berdasarkan musim yang dipilih. Pengguna dapat melihat bagaimana tren penggunaan berubah pada musim tertentu.")
+sns.set(style='whitegrid')
+fig, ax = plt.subplots(figsize=(12, 6))
+sns.lineplot(data=filtered_day_data, x='Tanggal', y='Jumlah Total', hue='Musim', ax=ax, palette='Set2')
+ax.set_title("Tren Penggunaan Sepeda Harian Berdasarkan Musim", fontsize=16, fontweight='bold')
+ax.set_xlabel("Tanggal", fontsize=14)
+ax.set_ylabel("Jumlah Total Penggunaan", fontsize=14)
+st.pyplot(fig)
+
+# Visualisasi Penggunaan Sepeda Per Jam (Jika Dataset Per Jam Dipilih)
+if dataset_choice == 'Per Jam':
+    st.subheader("Penggunaan Sepeda Berdasarkan Jam (Hari Kerja vs Akhir Pekan)")
+    st.markdown("**Interpretasi:** Grafik ini memperlihatkan perbandingan penggunaan sepeda setiap jam pada hari kerja dan akhir pekan. Pola yang muncul menunjukkan jam-jam puncak penggunaan sepeda.")
+    hour_data['workingday_label'] = hour_data['Hari Kerja'].map({1: 'Hari Kerja', 0: 'Akhir Pekan'})
+    filtered_hour_data = hour_data[(hour_data['Musim'].isin(musim_filter)) & (hour_data['Tahun'] == tahun_filter)]
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.lineplot(data=filtered_hour_data, x='Jam', y='Jumlah Total', hue='workingday_label', ax=ax, palette='coolwarm')
+    ax.set_title("Perbandingan Penggunaan Sepeda per Jam: Hari Kerja vs Akhir Pekan", fontsize=16, fontweight='bold')
+    ax.set_xlabel("Jam", fontsize=14)
+    ax.set_ylabel("Jumlah Total Penggunaan", fontsize=14)
+    st.pyplot(fig)
+
+# RFM Analysis Visualization
+elif dataset_choice == 'RFM Analysis':
+    st.subheader("RFM Analysis untuk Pengguna Bike Sharing")
+    st.markdown("**Interpretasi:** Scatter plot ini menunjukkan hubungan antara frekuensi, recency, dan monetary value dari penggunaan sepeda. Ukuran lingkaran mewakili total penggunaan oleh masing-masing pengguna.")
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.scatterplot(data=rfm_data, x='Recency', y='Frequency', size='Monetary', sizes=(50, 200), hue='Monetary', palette='viridis', ax=ax)
+    ax.set_title("RFM Analysis: Recency vs. Frequency vs. Monetary Value", fontsize=16, fontweight='bold')
+    ax.set_xlabel("Recency (Hari sejak terakhir menggunakan)", fontsize=14)
+    ax.set_ylabel("Frequency (Total Penggunaan)", fontsize=14)
+    st.pyplot(fig)
+
+# Clustering Analysis Visualization (Dengan Kolom Bahasa Indonesia)
+elif dataset_choice == 'Clustering Analysis':
+    st.subheader("Clustering Analysis Berdasarkan Musim dan Hari Kerja")
+    st.markdown("**Interpretasi:** Bar plot ini menunjukkan pengelompokan penggunaan sepeda berdasarkan musim dan status hari kerja. Setiap kluster menunjukkan volume penggunaan pada periode tertentu.")
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=clustering_data, x='Musim', y='Jumlah Total', hue='Label Penggunaan', ax=ax, palette='Blues')
+    ax.set_title("Cluster Penggunaan Sepeda Berdasarkan Musim dan Hari Kerja", fontsize=16, fontweight='bold')
+    ax.set_xlabel("Musim", fontsize=14)
+    ax.set_ylabel("Total Penggunaan", fontsize=14)
+    st.pyplot(fig)
+
+# Kesimpulan dan Insight
+st.write("Insight: Penggunaan sepeda cenderung meningkat pada musim panas dibandingkan dengan musim dingin, dan penggunaan lebih tinggi pada akhir pekan dibandingkan hari kerja selama musim liburan. RFM Analysis menunjukkan pengguna yang sering menggunakan sepeda, sementara Clustering Analysis mengelompokkan penggunaan berdasarkan musim dan hari kerja.")
